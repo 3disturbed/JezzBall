@@ -21,8 +21,12 @@ clock runs out. Simple to learn, absurdly tense in the endgame, and built for
 
 | Mode | Players | Pitch |
 |---|---|---|
+| **Solo** | 1 | Instant start from the landing page — no lobby. Level-ladder progression is remembered on your device; start later runs from your best level. |
 | **Party Op** (co-op) | 1–4 | Shared arena, shared team lives, escalating levels with hazard atoms and power-ups. Seal regions simultaneously for combo bonuses. |
 | **Turf War** (versus) | 2–8 | 2½-minute rounds. Sealed territory is painted in your color; most turf when the timer ends wins. Best-of-3 with one-click rematch. |
+
+On phones: tap to aim, then **swipe to launch** — the swipe's direction sets
+the wall's orientation.
 
 ## Why it feels good
 

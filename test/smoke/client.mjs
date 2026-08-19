@@ -96,6 +96,8 @@ const assert = (cond, msg) => {
 
 assert(window.document.querySelector('#arena'), 'canvas mounts');
 assert(window.document.querySelector('#screen-landing.active'), 'landing screen shows');
+assert(window.document.querySelector('#btn-solo'), 'solo button present');
+assert(window.document.querySelector('#solo-level'), 'solo level picker present');
 
 // Create a room via the real button path.
 window.document.querySelector('#btn-create').click();

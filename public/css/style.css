@@ -39,6 +39,15 @@ body {
   text-align: left;
 }
 label { display: grid; gap: .35rem; color: var(--dim); font-size: .9rem; }
+label.inline { display: flex; align-items: center; gap: .5rem; }
+select {
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: .45rem .5rem;
+  font: inherit;
+}
 input[type="text"], input:not([type]), input[type="number"] {
   background: rgba(0,0,0,.35);
   border: 1px solid rgba(255,255,255,.14);

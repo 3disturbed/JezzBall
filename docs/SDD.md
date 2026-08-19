@@ -74,8 +74,15 @@ The one-click/one-axis/two-heads model is deliberately unchanged from the
 classic — it is the pillar-2 mechanic. Everything multiplayer is layered
 around it, never on top of it.
 
-### 2.2 Party Op (co-op, 1–4 players)
+### 2.2 Party Op (co-op, 1–4 players) and Solo
 
+- **Solo quick-start:** Party Op scales down to one player. The landing
+  page's *Play solo* button skips the lobby entirely (the room auto-starts),
+  and the furthest level reached is remembered on-device so later runs can
+  start deeper in the ladder (level picker, capped at the best level
+  reached). A solo room is still a real room — the `/r/CODE` link keeps
+  working, and a friend who opens it spectates, then converts the run to
+  co-op at the next level.
 - Team clears a **level ladder**. Level N: `2 + N` atoms, target **75%**
   capture, par time for bonus.
 - **Shared team lives** (`3 + players`). A shattered wall costs 1 life. Zero
@@ -120,11 +127,11 @@ around it, never on top of it.
 
 | Action | Desktop | Mobile |
 |---|---|---|
-| Aim | mouse hover (ghost preview of both heads) | drag finger, preview follows |
-| Build wall | left click | release tap |
-| Toggle axis | right click / Space | on-screen ⤢ button or two-finger tap |
+| Aim | mouse hover (ghost preview of both heads) | tap — the preview anchors to that cell |
+| Build wall | left click | **swipe from the cell** — the wall launches from where the finger went down |
+| Toggle axis | right click / Space | the swipe's own direction picks the axis (horizontal swipe ⇒ horizontal wall); ⇕ button / two-finger tap re-orient the preview |
 | Power-up | 1/2/3 | touch buttons |
-| Emote wheel | hold E | hold avatar |
+| Emote wheel | hold E | 😀 button |
 
 The ghost preview always shows exactly which cells both heads will claim and
 tints red any atom currently on a collision course with the wet phase — the

@@ -47,7 +47,28 @@ export const game = {
   axis: 'v',
   aim: null, // {cx, cy} hover cell
   over: false,
+  solo: false,
 };
+
+// Solo progression: furthest level reached, remembered on-device.
+const bestLevel = () => Math.max(1, Math.min(30, +localStorage.getItem('jb-best') || 1));
+function recordLevelReached(level) {
+  if (level > bestLevel()) localStorage.setItem('jb-best', String(Math.min(30, level)));
+}
+function refreshSoloPicker() {
+  const wrap = $('#solo-level-wrap');
+  const sel = $('#solo-level');
+  const best = bestLevel();
+  wrap.hidden = best <= 1;
+  sel.innerHTML = '';
+  for (let l = 1; l <= best; l++) {
+    const o = document.createElement('option');
+    o.value = String(l);
+    o.textContent = String(l);
+    sel.append(o);
+  }
+  sel.value = String(best);
+}
 export const tickMs = 1000 / TICK_RATE;
 
 // Estimated current server tick (drives wall growth + interpolation clock).
@@ -101,8 +122,15 @@ function connect(after) {
     game.players = w.players;
     history.replaceState(null, '', `/r/${w.code}`);
     if (w.board) {
+      // Rejoin mid-run; a one-seat room keeps solo ergonomics.
+      game.solo = w.players.length === 1;
       loadBoard(w.board);
       startRound(false);
+    } else if (game.solo) {
+      // Solo quick-start: skip the lobby, jump straight into the ladder.
+      game.socket.emit('host', { action: 'level', level: +($('#solo-level').value || 1) });
+      game.socket.emit('host', { action: 'start' });
+      show('game');
     } else {
       renderLobby();
       show('lobby');
@@ -117,11 +145,14 @@ function connect(after) {
     game.roundNo = l.roundNo;
     game.roundWins = l.roundWins || {};
     game.isHost = !!l.players.find((p) => p.seat === game.seat && p.host);
-    if (l.phase === 'lobby' && !screens.lobby.classList.contains('active')) show('lobby');
+    // A friend joining a solo run converts it to a normal multiplayer room.
+    if (game.solo && l.players.filter((p) => p.connected).length > 1) game.solo = false;
+    if (!game.solo && l.phase === 'lobby' && !screens.lobby.classList.contains('active')) show('lobby');
     renderLobby();
   });
 
   socket.on('start', (s) => {
+    if (s.mode === 'party') recordLevelReached(s.level);
     game.mode = s.mode;
     game.level = s.level;
     game.roundNo = s.roundNo;
@@ -300,6 +331,8 @@ function saveIdentity() {
 
 function leaveToLanding(message) {
   game.code = null;
+  game.solo = false;
+  refreshSoloPicker();
   game.socket?.disconnect();
   game.socket = null;
   history.replaceState(null, '', '/');
@@ -498,11 +531,19 @@ function endScreen(e) {
       e.result === 'victory' ? `Level ${e.level} cleared — ${Math.round(e.pct * 100)}%!` : `Run over at level ${e.level}`;
     if (e.next === 'level') {
       title.textContent += ' Next level…';
-      setTimeout(() => { /* server sends start */ }, 0);
       $('#btn-rematch').hidden = true;
     } else {
       $('#btn-rematch').hidden = !game.isHost;
-      $('#btn-rematch').textContent = 'New run';
+      $('#btn-rematch').textContent = game.solo ? `Play again (level ${e.level})` : 'New run';
+    }
+    if (game.solo) {
+      const row = document.createElement('div');
+      row.className = 'podium-row';
+      row.textContent = `Reached level ${e.level} · Best level ${bestLevel()}`;
+      podium.append(row);
+      $('#btn-exit').textContent = 'invite friends';
+    } else {
+      $('#btn-exit').textContent = 'back to lobby';
     }
   } else {
     const scores = Object.entries(e.turf || {}).sort((a, b) => b[1] - a[1]);
@@ -545,9 +586,13 @@ export function requestBuild(cx, cy) {
   sfx.click();
 }
 
-export function toggleAxis() {
-  game.axis = game.axis === 'v' ? 'h' : 'v';
+export function setAxis(axis) {
+  game.axis = axis === 'h' ? 'h' : 'v';
   $('#btn-axis').textContent = game.axis === 'v' ? '⇕' : '⇔';
+}
+
+export function toggleAxis() {
+  setAxis(game.axis === 'v' ? 'h' : 'v');
 }
 
 export function sendEmote(id) {
@@ -556,8 +601,14 @@ export function sendEmote(id) {
 }
 
 // ---------- buttons ----------
+$('#btn-solo').onclick = () => {
+  saveIdentity();
+  game.solo = true;
+  connect(() => game.socket.emit('create', { mode: 'party', name: nameInput.value || 'Player', hue: +hueInput.value }));
+};
 $('#btn-create').onclick = () => {
   saveIdentity();
+  game.solo = false;
   connect(() => game.socket.emit('create', { mode: 'party', name: nameInput.value, hue: +hueInput.value }));
 };
 $('#btn-join').onclick = () => {
@@ -581,8 +632,23 @@ $('#btn-ready').onclick = () => {
 };
 $('#btn-start').onclick = () => game.socket.emit('host', { action: 'start' });
 $('#btn-leave').onclick = () => leaveToLanding();
-$('#btn-exit').onclick = () => show('lobby');
-$('#btn-rematch').onclick = () => game.socket.emit('host', { action: 'rematch' });
+$('#btn-exit').onclick = () => {
+  game.solo = false; // "invite friends" from a solo run lands in the normal lobby
+  renderLobby();
+  show('lobby');
+};
+$('#btn-rematch').onclick = () => {
+  if (game.solo) {
+    // Same socket, ordered delivery: reset to lobby, pick up where we died,
+    // start — the lobby never shows.
+    game.socket.emit('host', { action: 'rematch' });
+    game.socket.emit('host', { action: 'level', level: game.level });
+    game.socket.emit('host', { action: 'start' });
+    show('game');
+    return;
+  }
+  game.socket.emit('host', { action: 'rematch' });
+};
 $('#level-input').onchange = (e) => game.socket.emit('host', { action: 'level', level: +e.target.value });
 for (const b of document.querySelectorAll('#mode-seg .seg-btn')) {
   b.onclick = () => game.socket.emit('host', { action: 'mode', mode: b.dataset.mode });
@@ -599,8 +665,9 @@ for (const b of document.querySelectorAll('#mode-seg .seg-btn')) {
 }
 
 // ---------- boot ----------
+refreshSoloPicker();
 const renderer = new Renderer($('#arena'), game);
-attachInput($('#arena'), game, { requestBuild, toggleAxis });
+attachInput($('#arena'), game, { requestBuild, toggleAxis, setAxis });
 renderer.start();
 
 const deepLink = location.pathname.match(/^\/r\/([A-Za-z0-9]{6})$/);

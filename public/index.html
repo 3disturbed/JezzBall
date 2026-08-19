@@ -25,7 +25,13 @@
           <span id="hue-chip" class="chip"></span>
         </label>
         <div class="row">
-          <button id="btn-create" class="big primary">Create room</button>
+          <button id="btn-solo" class="big primary">▶ Play solo</button>
+          <label id="solo-level-wrap" class="inline" hidden>from level
+            <select id="solo-level"></select>
+          </label>
+        </div>
+        <div class="row">
+          <button id="btn-create" class="big">Create multiplayer room</button>
         </div>
         <div class="row join-row">
           <input id="code-input" maxlength="6" placeholder="ROOM CODE" autocapitalize="characters" autocomplete="off">

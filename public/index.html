@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>JezzBall — carve the arena, trap the atoms</title>
+  <meta name="description" content="Multiplayer JezzBall. One link brings a friend into your room in seconds — no account, phone or desktop.">
+  <meta name="theme-color" content="#131c3d">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Landing -->
+    <section id="screen-landing" class="screen active">
+      <h1 class="logo">JEZZ<span>BALL</span></h1>
+      <p class="tag">Carve the arena. Trap the atoms. Bring your friends.</p>
+      <div class="card">
+        <label>Your name
+          <input id="name-input" maxlength="16" autocomplete="nickname" placeholder="Player">
+        </label>
+        <label>Color
+          <input id="hue-input" type="range" min="0" max="359" value="20">
+          <span id="hue-chip" class="chip"></span>
+        </label>
+        <div class="row">
+          <button id="btn-create" class="big primary">Create room</button>
+        </div>
+        <div class="row join-row">
+          <input id="code-input" maxlength="6" placeholder="ROOM CODE" autocapitalize="characters" autocomplete="off">
+          <button id="btn-join" class="big">Join</button>
+        </div>
+      </div>
+      <p id="landing-error" class="error" hidden></p>
+      <p class="hint">Made for sharing — create a room and send the link. No accounts, ever.</p>
+    </section>
+
+    <!-- Lobby -->
+    <section id="screen-lobby" class="screen">
+      <h2>Room <span id="lobby-code" class="code"></span></h2>
+      <button id="btn-copy" class="linkish">📋 Copy invite link</button>
+      <span id="copy-done" class="ok" hidden>copied!</span>
+      <ul id="lobby-players" class="players"></ul>
+      <div id="host-controls" class="card" hidden>
+        <div class="row seg" id="mode-seg">
+          <button data-mode="party" class="seg-btn active">Party Op <small>co-op</small></button>
+          <button data-mode="turf" class="seg-btn">Turf War <small>versus</small></button>
+        </div>
+        <div class="row" id="level-row">
+          <label>Start level <input id="level-input" type="number" min="1" max="30" value="1"></label>
+        </div>
+        <button id="btn-start" class="big primary">Start game</button>
+      </div>
+      <div class="row">
+        <button id="btn-ready" class="big">I'm ready</button>
+        <button id="btn-leave" class="linkish">leave</button>
+      </div>
+      <p class="hint" id="lobby-hint">Waiting for players — everyone ready = instant start.</p>
+    </section>
+
+    <!-- Game -->
+    <section id="screen-game" class="screen">
+      <div id="hud">
+        <div id="hud-left"></div>
+        <div id="hud-mid"><div id="fill-bar"><i></i><b></b></div></div>
+        <div id="hud-right"></div>
+      </div>
+      <div id="arena-wrap">
+        <canvas id="arena"></canvas>
+        <div id="banner" hidden></div>
+        <div id="countdown" hidden></div>
+      </div>
+      <div id="touch-controls">
+        <button id="btn-axis" title="Toggle wall direction (Space / right-click)">⇕</button>
+        <div id="power-slots"></div>
+        <button id="btn-emote" title="Emotes (hold E)">😀</button>
+      </div>
+      <div id="emote-wheel" hidden></div>
+    </section>
+
+    <!-- End / podium -->
+    <section id="screen-end" class="screen">
+      <h2 id="end-title"></h2>
+      <div id="podium"></div>
+      <div class="row">
+        <button id="btn-rematch" class="big primary">Rematch</button>
+        <button id="btn-exit" class="linkish">back to lobby</button>
+      </div>
+    </section>
+
+  </div>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

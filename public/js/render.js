@@ -1,7 +1,7 @@
 // Canvas renderer + effects. Reads (never writes) the shared game state from
 // main.js; all timing runs off the estimated server tick so wall growth and
 // atom interpolation stay glued to the authoritative sim.
-import { W, H, CELL, TICK_RATE, WALL_SPEED } from '/shared/sim.js?v=3';
+import { W, H, CELL, TICK_RATE, WALL_SPEED } from '/shared/sim.js?v=4';
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const INTERP_TICKS = 3; // ~100 ms behind server
@@ -202,6 +202,8 @@ export class Renderer {
   aimPreview(tickNow) {
     const g = this.game;
     if (!g.aim || g.over) return null;
+    // Duel: no preview while it isn't your turn — the arena reads as locked.
+    if (g.mode === 'duel' && (!g.turn || g.turn.seat !== g.seat)) return null;
     const { cx, cy } = g.aim;
     if (cx < 0 || cx >= W || cy < 0 || cy >= H) return null;
     if (g.grid[cy * W + cx] !== CELL.EMPTY) return null;

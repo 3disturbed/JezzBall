@@ -7,12 +7,15 @@ import {
   step,
   tryBuild,
   triggerPower,
+  passTurn,
   snapshotAtoms,
   serializeBoard,
   turfScores,
   TICK_RATE,
   SNAP_EVERY,
 } from '../shared/sim.js';
+
+const VALID_MODES = new Set(['party', 'turf', 'duel']);
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
 const MAX_PLAYERS = 8;
@@ -37,7 +40,7 @@ export class Room {
   constructor(io, code, mode, manager) {
     this.io = io;
     this.code = code;
-    this.mode = mode === 'turf' ? 'turf' : 'party';
+    this.mode = VALID_MODES.has(mode) ? mode : 'party';
     this.manager = manager;
     this.players = new Map(); // token -> player record
     this.hostToken = null;
@@ -204,7 +207,7 @@ export class Room {
     if (!p || !this.isHost(p)) return;
     if (action === 'start' && this.phase === 'lobby') this.startCountdown();
     if (action === 'mode' && this.phase === 'lobby') {
-      this.mode = payload.mode === 'turf' ? 'turf' : 'party';
+      this.mode = VALID_MODES.has(payload.mode) ? payload.mode : 'party';
       this.level = 1;
       this.broadcastLobby();
     }
@@ -318,6 +321,7 @@ export class Room {
           atoms: snapshotAtoms(this.sim),
           pct: this.sim.filled / (48 * 30),
           timer: this.sim.timer,
+          turn: this.sim.turn ? { seat: this.sim.turn.seat, left: this.sim.turn.ticksLeft } : undefined,
           energy:
             this.mode === 'turf'
               ? Object.fromEntries(
@@ -336,6 +340,21 @@ export class Room {
         this.onRoundEnd(e);
         continue;
       }
+      if (e.type === 'turn') {
+        // Never hand the turn to an empty chair: chain past disconnected
+        // seats (bounded — a fully empty room pauses via emptySince anyway).
+        let ev = e;
+        let guard = 0;
+        while (guard++ < 16) {
+          const holder = [...this.players.values()].find((p) => p.seat === ev.seat);
+          if (holder && holder.connected) break;
+          const next = passTurn(this.sim).find((x) => x.type === 'turn');
+          if (!next) break;
+          ev = { ...next, skipped: true };
+        }
+        this.io.to(this.code).emit('turn', ev);
+        continue;
+      }
       // set / shatter / capture / stun / split / lives / power / powerSpawn / hurry
       this.io.to(this.code).emit(e.type, e);
     }
@@ -347,7 +366,7 @@ export class Room {
       result: e.result,
       level: this.level,
       pct: this.sim.filled / (48 * 30),
-      turf: this.mode === 'turf' ? turfScores(this.sim) : undefined,
+      turf: this.mode !== 'party' ? turfScores(this.sim) : undefined,
       roundNo: this.roundNo,
     };
     log({ ev: 'roundEnd', room: this.code, ...summary });
@@ -362,6 +381,21 @@ export class Room {
         this.phase = 'end';
         this.io.to(this.code).emit('end', { ...summary, next: 'lobby' });
       }
+      return;
+    }
+    if (this.mode === 'duel') {
+      // Single board, no series: most turf when the arena fills wins.
+      const scores = summary.turf ?? {};
+      let champion = null;
+      let best = -1;
+      for (const [seat, n] of Object.entries(scores)) {
+        if (n > best) {
+          best = n;
+          champion = +seat;
+        }
+      }
+      this.phase = 'end';
+      this.io.to(this.code).emit('end', { ...summary, next: 'lobby', champion });
       return;
     }
     // Turf: tally the round, run best-of-3.

@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=3';
-import { Renderer } from '/js/render.js?v=3';
-import { attachInput } from '/js/input.js?v=3';
-import { sfx } from '/js/sfx.js?v=3';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=4';
+import { Renderer } from '/js/render.js?v=4';
+import { attachInput } from '/js/input.js?v=4';
+import { sfx } from '/js/sfx.js?v=4';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -41,6 +41,7 @@ export const game = {
   lives: 0,
   energy: {},
   timer: 0,
+  turn: null, // duel: {seat, left}
   latestTick: 0,
   tickOffsetMs: null, // EMA of (recvAt - t*tickMs)
   seq: 1,
@@ -168,6 +169,7 @@ function connect(after) {
     game.tickOffsetMs = game.tickOffsetMs === null ? off : game.tickOffsetMs * 0.9 + off * 0.1;
     game.pct = s.pct;
     if (s.timer !== undefined) game.timer = s.timer;
+    if (s.turn) game.turn = s.turn;
     if (s.energy) game.energy = s.energy;
     const seen = new Set();
     for (const [id, x, y, vx, vy, type] of s.atoms) {
@@ -288,6 +290,20 @@ function connect(after) {
     sfx.hurry();
   });
 
+  socket.on('turn', (e) => {
+    game.turn = { seat: e.seat, left: 30 * TICK_RATE };
+    if (e.seat === game.seat) {
+      banner('YOUR TURN');
+      sfx.go();
+    } else if (e.passed && e.prev === game.seat) {
+      banner(`Out of time — ${seatName(e.seat)}'s turn`);
+      sfx.stun();
+    } else {
+      banner(`${seatName(e.seat)}'s turn`);
+    }
+    updateHud();
+  });
+
   socket.on('emote', (e) => {
     renderer.emote(e.seat, EMOJI[e.id] || '😀', e.name);
   });
@@ -350,6 +366,7 @@ function loadBoard(board) {
   game.level = board.level;
   game.mode = board.mode;
   game.timer = board.timer;
+  game.turn = board.turn ?? null;
   game.lives = board.lives;
   game.powers = board.powers || [];
   game.powerups = board.powerups || [];
@@ -498,6 +515,34 @@ export function updateHud() {
       b.disabled = !kind;
       b.title = kind ? `${kind} (key ${i + 1})` : 'empty slot';
     });
+  } else if (game.mode === 'duel') {
+    const secs = game.turn ? Math.max(0, Math.ceil(game.turn.left / TICK_RATE)) : 0;
+    const holder = game.turn ? game.turn.seat : -1;
+    const mine = holder === game.seat;
+    left.innerHTML = '';
+    const chip = document.createElement('span');
+    chip.className = 'turf-chip';
+    chip.innerHTML = `<span class="dot" style="background:${seatColor(holder)}"></span>` +
+      `<b>${mine ? 'YOUR TURN' : `${seatName(holder)}'s turn`}</b>` +
+      `<span class="shot-clock${secs <= 5 ? ' low' : ''}">⏱ ${secs}s</span>`;
+    left.append(chip);
+    right.innerHTML = '';
+    const counts = {};
+    let filled = 0;
+    for (let ci = 0; ci < TOTAL; ci++) {
+      if (game.grid[ci] === CELL.FILLED) {
+        counts[game.owner[ci] - 1] = (counts[game.owner[ci] - 1] || 0) + 1;
+        filled++;
+      }
+    }
+    for (const p of game.players) {
+      if (p.seat === -1) continue;
+      const t = document.createElement('span');
+      t.className = 'turf-chip';
+      const pctOf = filled ? Math.round(((counts[p.seat] || 0) / TOTAL) * 100) : 0;
+      t.innerHTML = `<span class="dot" style="background:hsl(${p.hue} 80% 60%)"></span>${pctOf}%`;
+      right.append(t);
+    }
   } else {
     const secs = Math.max(0, Math.ceil(game.timer / TICK_RATE));
     left.innerHTML = `<span>⏱ ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</span>` +
@@ -590,6 +635,7 @@ function endScreen(e) {
 // ---------- wall building (prediction) ----------
 export function requestBuild(cx, cy) {
   if (game.over || game.phase === 'lobby' || game.seat === -1) return;
+  if (game.mode === 'duel' && (!game.turn || game.turn.seat !== game.seat)) return;
   if (cx < 0 || cx >= W || cy < 0 || cy >= H) return;
   if (game.grid[cy * W + cx] !== CELL.EMPTY) return;
   const seq = game.seq++;

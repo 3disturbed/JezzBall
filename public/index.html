@@ -10,7 +10,7 @@
   <!-- Bump ?v= on every client deploy: index.html is no-cache, everything
        else is cached 7 days, so these query strings are what roll players
        onto fresh code. Keep in lockstep with the import tags inside js/. -->
-  <link rel="stylesheet" href="/css/style.css?v=3">
+  <link rel="stylesheet" href="/css/style.css?v=4">
 </head>
 <body>
   <div id="app">
@@ -55,6 +55,7 @@
         <div class="row seg" id="mode-seg">
           <button data-mode="party" class="seg-btn active">Party Op <small>co-op</small></button>
           <button data-mode="turf" class="seg-btn">Turf War <small>versus</small></button>
+          <button data-mode="duel" class="seg-btn">Duel <small>turn-based</small></button>
         </div>
         <div class="row" id="level-row">
           <label>Start level <input id="level-input" type="number" min="1" max="30" value="1"></label>
@@ -99,6 +100,6 @@
     </section>
 
   </div>
-  <script type="module" src="/js/main.js?v=3"></script>
+  <script type="module" src="/js/main.js?v=4"></script>
 </body>
 </html>

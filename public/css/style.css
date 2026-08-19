@@ -109,6 +109,10 @@ button.linkish { background: none; border: none; color: var(--dim); text-decorat
 #energy i { display: block; height: 100%; width: 100%; background: var(--ok); }
 .turf-chip { display: inline-flex; align-items: center; gap: .3rem; font-size: .8rem; }
 .turf-chip .dot { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+.shot-clock { font-variant-numeric: tabular-nums; font-weight: 700; }
+.shot-clock.low { color: #ff8080; animation: clockPulse .5s infinite alternate; }
+@keyframes clockPulse { to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .shot-clock.low { animation: none; } }
 
 #arena-wrap { position: relative; flex: 1; display: grid; place-items: center; min-height: 0; padding: 0 .4rem .4rem; }
 #arena { background: #090e1f; border-radius: 10px; box-shadow: 0 0 60px #0008 inset, 0 4px 30px #0006; max-width: 100%; max-height: 100%; touch-action: none; }

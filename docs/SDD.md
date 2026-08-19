@@ -124,6 +124,22 @@ around it, never on top of it.
 - Late-round pressure: at 0:30 remaining, all atoms speed up 25% and the
   music doubles time. Comebacks stay possible; leads stay scary.
 
+### 2.3b Duel (turn-based versus, 2–8 players)
+
+- The atoms never stop — only the **building** is turn-gated. On your turn
+  you place exactly **one wall** under a **30-second shot clock**; everyone
+  else watches the same live arena.
+- The clock runs only while you are deciding: once the wall is placed it
+  freezes, and the turn ends when the wall **resolves** — both heads set
+  (with any capture credited to you) or shattered (your turn was the price).
+  Running the clock out passes the turn with nothing built.
+- No energy, no lives — one wall per turn is the whole economy.
+- Match end: total fill reaches **75%**; most territory wins. Single board,
+  no series; one-click rematch from the podium.
+- Disconnected players are skipped by the server until they rejoin (their
+  seat's 60 s grace still applies to reclaiming it).
+- Atom count matches Turf (`4 + 2×players`), all standard type.
+
 ### 2.4 Controls
 
 | Action | Desktop | Mobile |

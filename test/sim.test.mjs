@@ -238,6 +238,75 @@ test('splitter splits into two minis on nearby capture', () => {
   assert.ok(!state.atoms.includes(splitter));
 });
 
+test('duel: turn gating and one wall per turn', () => {
+  const state = createGame({ mode: 'duel', seed: 5, seats: [{ seat: 0 }, { seat: 1 }] });
+  parkAtoms(state, 2.5, 2.5);
+  assert.equal(state.turn.seat, 0);
+  // Out-of-turn build rejected.
+  assert.equal(tryBuild(state, 1, 30, 15, 'v').reason, 'turn');
+  // In-turn build accepted; a second wall the same turn is rejected.
+  assert.ok(tryBuild(state, 0, 30, 15, 'v').ok);
+  assert.equal(tryBuild(state, 0, 40, 15, 'v').reason, 'placed');
+  // Shot clock freezes while the wall grows.
+  const before = state.turn.ticksLeft;
+  runTicks(state, 10);
+  assert.equal(state.turn.ticksLeft, before);
+  // Wall resolves (sets + captures) -> turn passes to seat 1, not flagged as timeout.
+  const events = runTicks(state, 4 * TICK_RATE);
+  const turn = events.find((e) => e.type === 'turn');
+  assert.ok(turn, 'turn advanced after wall resolved');
+  assert.equal(turn.seat, 1);
+  assert.equal(turn.passed, false);
+  assert.ok(events.some((e) => e.type === 'capture' && e.who === 0));
+});
+
+test('duel: 30s shot clock passes the turn', () => {
+  const state = createGame({ mode: 'duel', seed: 6, seats: [{ seat: 0 }, { seat: 1 }] });
+  parkAtoms(state, 2.5, 2.5);
+  assert.equal(state.turn.ticksLeft, 30 * TICK_RATE);
+  const events = runTicks(state, 30 * TICK_RATE + 2);
+  const turn = events.find((e) => e.type === 'turn');
+  assert.ok(turn, 'timeout passed the turn');
+  assert.equal(turn.seat, 1);
+  assert.equal(turn.passed, true);
+  // And it cycles back to seat 0 after another 30 s.
+  const events2 = runTicks(state, 30 * TICK_RATE + 2);
+  assert.equal(events2.find((e) => e.type === 'turn')?.seat, 0);
+});
+
+test('duel: shattered wall still ends the turn', () => {
+  const state = createGame({ mode: 'duel', seed: 7, seats: [{ seat: 0 }, { seat: 1 }] });
+  parkAtoms(state, 24.5, 10.5); // dead ahead of the upward head
+  assert.ok(tryBuild(state, 0, 24, 20, 'v').ok);
+  const events = runTicks(state, 4 * TICK_RATE);
+  assert.ok(events.some((e) => e.type === 'shatter'));
+  const turn = events.find((e) => e.type === 'turn');
+  assert.ok(turn, 'turn advanced after shatter');
+  assert.equal(turn.seat, 1);
+});
+
+test('duel: match ends at 75% fill with turf scores', () => {
+  const state = createGame({ mode: 'duel', seed: 8, seats: [{ seat: 0 }, { seat: 1 }] });
+  parkAtoms(state, 2.5, 2.5);
+  assert.ok(tryBuild(state, 0, 10, 15, 'v').ok); // captures ~77% for seat 0
+  const events = runTicks(state, 4 * TICK_RATE);
+  const end = events.find((e) => e.type === 'end');
+  assert.ok(end, 'match ended');
+  assert.equal(end.result, 'filled');
+  assert.ok(end.turf[0] > end.turf[1] || end.turf[1] === 0);
+  // No further turns once over.
+  assert.equal(runTicks(state, 40).length, 0);
+});
+
+test('duel: passTurn skips the current holder', async () => {
+  const { passTurn } = await import('../shared/sim.js');
+  const state = createGame({ mode: 'duel', seed: 9, seats: [{ seat: 0 }, { seat: 1 }, { seat: 2 }] });
+  const events = passTurn(state);
+  assert.equal(events[0].type, 'turn');
+  assert.equal(events[0].seat, 1);
+  assert.equal(state.turn.seat, 1);
+});
+
 test('serialize/snapshot shapes are stable', async () => {
   const { serializeBoard, snapshotAtoms } = await import('../shared/sim.js');
   const state = game();

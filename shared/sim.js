@@ -27,6 +27,14 @@ export const MODES = {
     regenPerTick: 10 / TICK_RATE,
     comboWindow: Math.round(1.5 * TICK_RATE),
   },
+  // Turn-based versus: one wall per turn under a 30 s shot clock. The atoms
+  // never stop — only the building is gated. Match ends at 75% total fill;
+  // most territory wins.
+  duel: {
+    target: 0.75,
+    turnTicks: 30 * TICK_RATE,
+    comboWindow: Math.round(1.5 * TICK_RATE),
+  },
 };
 
 export const ATOM = {
@@ -96,6 +104,8 @@ export function createGame({ mode, seed, seats, level = 1 }) {
     comboCount: 0,
     timer: 0,
     hurried: false,
+    turn: null, // duel: {seat, ticksLeft, wallId}
+    turnOrder: [],
     over: false,
   };
 
@@ -110,8 +120,13 @@ export function createGame({ mode, seed, seats, level = 1 }) {
     atomTypes = partyAtomTypes(level, 2 + level, rng);
     state.nextPowerAt = 20 * TICK_RATE;
   } else {
-    state.timer = MODES.turf.roundTicks;
     atomTypes = Array(4 + 2 * nSeats).fill('standard');
+    if (mode === 'turf') {
+      state.timer = MODES.turf.roundTicks;
+    } else {
+      state.turnOrder = seats.map((s) => s.seat).sort((a, b) => a - b);
+      state.turn = { seat: state.turnOrder[0], ticksLeft: MODES.duel.turnTicks, wallId: null };
+    }
   }
 
   for (const t of atomTypes) spawnAtom(state, t);
@@ -256,6 +271,10 @@ export function tryBuild(state, seat, cx, cy, axis) {
     if (p.energy < MODES.turf.buildCost) return { ok: false, reason: 'energy' };
     p.energy -= MODES.turf.buildCost;
   }
+  if (state.mode === 'duel') {
+    if (!state.turn || state.turn.seat !== seat) return { ok: false, reason: 'turn' };
+    if (state.turn.wallId !== null) return { ok: false, reason: 'placed' };
+  }
   const wall = {
     id: state.nextWallId++,
     who: seat,
@@ -277,7 +296,25 @@ export function tryBuild(state, seat, cx, cy, axis) {
   state.wetOwner[idx(cx, cy)] = wall.id;
   wall.heads[0].cells.push(idx(cx, cy));
   state.walls.set(wall.id, wall);
+  if (state.mode === 'duel') state.turn.wallId = wall.id;
   return { ok: true, wall };
+}
+
+// Duel: hand the turn to the next seat. The shot clock only runs while no
+// wall is pending — once placed, the turn ends when the wall resolves.
+function advanceTurn(state, events, passed) {
+  const order = state.turnOrder;
+  const prev = state.turn.seat;
+  const next = order[(order.indexOf(prev) + 1) % order.length];
+  state.turn = { seat: next, ticksLeft: MODES.duel.turnTicks, wallId: null };
+  events.push({ type: 'turn', seat: next, prev, passed });
+}
+
+// Room-level escape hatch: skip a disconnected player's turn immediately.
+export function passTurn(state) {
+  const events = [];
+  if (!state.over && state.mode === 'duel' && state.turn) advanceTurn(state, events, true);
+  return events;
 }
 
 function advanceWalls(state, events) {
@@ -470,6 +507,10 @@ function capture(state, wall, events) {
     state.over = true;
     events.push({ type: 'end', result: 'victory' });
   }
+  if (state.mode === 'duel' && state.filled / TOTAL >= MODES.duel.target) {
+    state.over = true;
+    events.push({ type: 'end', result: 'filled', turf: turfScores(state) });
+  }
 }
 
 export function triggerPower(state, _seat, slot) {
@@ -522,6 +563,16 @@ export function step(state) {
     if (state.timer <= 0) {
       state.over = true;
       events.push({ type: 'end', result: 'timeup', turf: turfScores(state) });
+    }
+  }
+
+  if (state.mode === 'duel' && !state.over && state.turn) {
+    const t = state.turn;
+    if (t.wallId !== null) {
+      if (!state.walls.has(t.wallId)) advanceTurn(state, events, false);
+    } else {
+      t.ticksLeft--;
+      if (t.ticksLeft <= 0) advanceTurn(state, events, true);
     }
   }
 
@@ -583,6 +634,7 @@ export function serializeBoard(state) {
     level: state.level,
     mode: state.mode,
     timer: state.timer,
+    turn: state.turn ? { seat: state.turn.seat, left: state.turn.ticksLeft } : undefined,
     lives: state.team.lives,
     powers: state.team.powers.slice(),
     powerups: state.powerups.map((p) => ({ ...p })),

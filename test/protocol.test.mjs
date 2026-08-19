@@ -99,6 +99,12 @@ test('full round trip: ready -> start -> build -> capture events', async () => {
   const end = await endP;
   assert.equal(end.result, 'victory');
   assert.equal(end.next, 'level');
+  // Main-menu bail-out: host can return the room to the lobby from the
+  // between-levels intermission (group stays together, mode changeable).
+  const lobbyP = once(a, 'lobby');
+  a.emit('host', { action: 'rematch' });
+  const lob = await lobbyP;
+  assert.equal(lob.phase, 'lobby');
   a.disconnect();
 });
 

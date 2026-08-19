@@ -228,7 +228,9 @@ export class Room {
         }
       }
     }
-    if (action === 'rematch' && this.phase === 'end') this.toLobby();
+    // From the podium ('end') or a between-levels intermission: return the
+    // whole room to the lobby so the group can change mode without splitting.
+    if (action === 'rematch' && (this.phase === 'end' || this.phase === 'intermission')) this.toLobby();
   }
 
   toLobby() {

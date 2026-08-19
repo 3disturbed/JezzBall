@@ -198,6 +198,11 @@ https://jezzball.darksgames.app/r/ABC123 ──▶ same lobby, seat claimed
                                            ▼
                                     Round(s) ──▶ Podium screen ──▶ Rematch (1 click,
                                                                    same room persists)
+                                                       └─▶ 🏠 Main menu: host returns
+                                                           the WHOLE room to the lobby
+                                                           (also mid-ladder from an
+                                                           intermission) to change mode
+                                                           without disbanding the group
 ```
 
 - Identity: name + color hue stored in `localStorage`; a per-room

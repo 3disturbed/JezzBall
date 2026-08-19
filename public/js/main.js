@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=8';
-import { Renderer } from '/js/render.js?v=8';
-import { attachInput } from '/js/input.js?v=8';
-import { sfx } from '/js/sfx.js?v=8';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=9';
+import { Renderer } from '/js/render.js?v=9';
+import { attachInput } from '/js/input.js?v=9';
+import { sfx } from '/js/sfx.js?v=9';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -319,6 +319,7 @@ function connect(after) {
 
   socket.on('end', (e) => {
     game.over = true;
+    game.phase = 'end';
     stopCountdown();
     setTimeout(() => endScreen(e), 900);
     if (e.result === 'victory') sfx.victory();
@@ -513,6 +514,13 @@ function renderLobby() {
   }
   const me = game.players.find((p) => p.seat === game.seat);
   $('#btn-ready').textContent = me?.ready ? 'Not ready' : "I'm ready";
+  // Viewing the lobby while the room is still on the podium: ready is inert
+  // until the host brings the room back.
+  const roomInLobby = game.phase === 'lobby';
+  $('#btn-ready').disabled = !roomInLobby;
+  $('#lobby-hint').textContent = roomInLobby
+    ? 'Waiting for players — everyone ready = instant start.'
+    : 'Match over — the host picks the next game.';
 }
 
 // ---------- HUD ----------
@@ -626,6 +634,7 @@ function endScreen(e) {
   const title = $('#end-title');
   const podium = $('#podium');
   podium.innerHTML = '';
+  $('#btn-exit').textContent = '🏠 Main menu';
   if (game.mode === 'party') {
     title.textContent =
       e.result === 'victory' ? `Level ${e.level} cleared — ${Math.round(e.pct * 100)}%!` : `Run over at level ${e.level}`;
@@ -642,8 +651,6 @@ function endScreen(e) {
       row.textContent = `Reached level ${e.level} · Best level ${bestLevel()}`;
       podium.append(row);
       $('#btn-exit').textContent = 'invite friends';
-    } else {
-      $('#btn-exit').textContent = 'back to lobby';
     }
   } else {
     const scores = Object.entries(e.turf || {}).sort((a, b) => b[1] - a[1]);
@@ -752,7 +759,11 @@ $('#btn-ready').onclick = () => {
 $('#btn-start').onclick = () => game.socket.emit('host', { action: 'start' });
 $('#btn-leave').onclick = () => leaveToLanding();
 $('#btn-exit').onclick = () => {
-  game.solo = false; // "invite friends" from a solo run lands in the normal lobby
+  game.solo = false; // solo's "invite friends" lands in the normal lobby too
+  // Host: actually move the ROOM to the lobby (server allows from the podium
+  // or an intermission) so the group can change mode without disbanding.
+  // Non-hosts just look at the lobby; it goes live when the host follows.
+  if (game.isHost) game.socket?.emit('host', { action: 'rematch' });
   renderLobby();
   show('lobby');
 };

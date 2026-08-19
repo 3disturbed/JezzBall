@@ -71,6 +71,7 @@ button {
   transition: transform .06s, background .15s;
 }
 button:active { transform: scale(.96); }
+button:disabled { opacity: .4; cursor: default; }
 button.big { font-size: 1.05rem; padding: .8rem 1.4rem; font-weight: 700; }
 button.primary { background: var(--accent); border-color: transparent; color: #21040a; }
 button.linkish { background: none; border: none; color: var(--dim); text-decoration: underline; }

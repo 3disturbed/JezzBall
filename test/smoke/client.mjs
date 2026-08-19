@@ -134,7 +134,7 @@ socket.trigger('snap', {
   pct: state.filled / (48 * 30),
 });
 socket.trigger('set', { wall: 1, head: 0, cells: [100, 148], who: 0 });
-socket.trigger('capture', { cells: [200, 201, 202], who: 0, pct: 0.01, combo: 1, stolenFrom: null });
+socket.trigger('capture', { cells: [200, 201, 202], who: 0, pct: 0.01, combo: 1 });
 assert(typeof rafCallback === 'function', 'render loop started');
 rafCallback();
 rafCallback();

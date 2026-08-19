@@ -1,7 +1,7 @@
 // Canvas renderer + effects. Reads (never writes) the shared game state from
 // main.js; all timing runs off the estimated server tick so wall growth and
 // atom interpolation stay glued to the authoritative sim.
-import { W, H, CELL, TICK_RATE, WALL_SPEED } from '/shared/sim.js?v=2';
+import { W, H, CELL, TICK_RATE, WALL_SPEED } from '/shared/sim.js?v=3';
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const INTERP_TICKS = 3; // ~100 ms behind server

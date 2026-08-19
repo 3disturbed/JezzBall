@@ -80,7 +80,6 @@ export const sfx = {
       tone({ freq: base * 2 ** (semi / 12), dur: 0.12, type: 'triangle', gain: 0.22, delay: i * 0.05 })
     );
   },
-  steal: () => [660, 550, 770].forEach((f, i) => tone({ freq: f, dur: 0.09, type: 'square', gain: 0.16, delay: i * 0.07 })),
   split: () => tone({ freq: 900, dur: 0.2, type: 'sawtooth', gain: 0.2, slide: -500 }),
   power: () => [440, 660, 880].forEach((f, i) => tone({ freq: f, dur: 0.1, gain: 0.2, delay: i * 0.06 })),
   hurry: () => [220, 220, 330].forEach((f, i) => tone({ freq: f, dur: 0.15, type: 'square', gain: 0.25, delay: i * 0.16 })),

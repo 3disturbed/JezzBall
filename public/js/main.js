@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=2';
-import { Renderer } from '/js/render.js?v=2';
-import { attachInput } from '/js/input.js?v=2';
-import { sfx } from '/js/sfx.js?v=2';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=3';
+import { Renderer } from '/js/render.js?v=3';
+import { attachInput } from '/js/input.js?v=3';
+import { sfx } from '/js/sfx.js?v=3';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -250,10 +250,6 @@ function connect(after) {
     renderer.capture(e.cells, e.who, e.combo);
     sfx.capture(e.combo);
     if (e.combo >= 2) banner(`COMBO ×${e.combo} — ${seatName(e.who)}!`);
-    if (e.stolenFrom !== null && e.stolenFrom !== undefined && e.stolenFrom !== e.who) {
-      banner(`${seatName(e.who)} STOLE from ${seatName(e.stolenFrom)}!`);
-      sfx.steal();
-    }
     if (game.mode === 'party' && e.pct >= 0.6 && e.pct < 0.75) banner(`${Math.round(e.pct * 100)}%!`);
     updateHud();
   });

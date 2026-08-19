@@ -78,7 +78,7 @@ export function createGame({ mode, seed, seats, level = 1 }) {
     rng,
     grid: new Uint8Array(TOTAL),
     // For FILLED cells: seat + 1 of the capturer. For SOLID cells: seat + 1
-    // of the wall builder (used for Turf steal detection). 0 = none.
+    // of the wall builder (colors the wall client-side). 0 = none.
     owner: new Uint8Array(TOTAL),
     wetOwner: new Int32Array(TOTAL).fill(-1), // cell -> wall id while WET
     atoms: [],
@@ -421,30 +421,12 @@ function capture(state, wall, events) {
   const p = state.players.get(wall.who);
   if (p) p.captured += gained.length;
 
-  // Turf steal detection: another player's SOLID wall touches the gained area.
-  let stolenFrom = null;
-  if (state.mode === 'turf') {
-    outer: for (const ci of gained) {
-      const cx = ci % W;
-      const cy = (ci / W) | 0;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        if (!inBounds(cx + dx, cy + dy)) continue;
-        const ni = idx(cx + dx, cy + dy);
-        if (state.grid[ni] === CELL.SOLID && state.owner[ni] !== 0 && state.owner[ni] !== wall.who + 1) {
-          stolenFrom = state.owner[ni] - 1;
-          break outer;
-        }
-      }
-    }
-  }
-
   events.push({
     type: 'capture',
     cells: gained,
     who: wall.who,
     pct: state.filled / TOTAL,
     combo: state.comboCount,
-    stolenFrom,
   });
 
   // Power-up pickups sealed into territory are collected.

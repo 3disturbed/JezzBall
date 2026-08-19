@@ -115,9 +115,10 @@ around it, never on top of it.
   refunds nothing and stings for a further 10; regen 10/s). Energy throttles
   wall spam and makes a shattered wall a real tempo loss, not an elimination
   — nobody sits out a party game.
-- **Steals**: your wall completing may seal a region that finishes a cut a
-  rival started — area goes to whoever *completes* the seal. This is the
-  designed source of rivalry; the announcer calls out steals by name.
+- Capture attribution is simple and uncelebrated: sealed area belongs to
+  whoever *completes* the seal. (An announcer "steal" callout for finishing
+  a rival's cut shipped in v1 and was removed as too cheesy — do not
+  reintroduce it.)
 - Atom count scales with players (`4 + 2×players`), so more players means a
   denser, faster arena, not a diluted one.
 - Late-round pressure: at 0:30 remaining, all atoms speed up 25% and the
@@ -147,8 +148,8 @@ risk is legible *before* the click (pillar 2).
   slow-mo for 0.3 s.
 - Shatter: wet cells burst into shards, 200 ms screen shake, builder's
   avatar does a wince emote automatically.
-- Announcer (text banners + SFX, no voice in v1): combo tiers, steals,
-  "80%!", last-10-seconds countdown.
+- Announcer (text banners + SFX, no voice in v1): combo tiers, "80%!",
+  last-10-seconds countdown.
 - All effects respect `prefers-reduced-motion`; SFX mutable. (Music and a
   lobby QR code moved to the post-launch backlog — v1 ships procedural SFX
   and copy-link only.)

@@ -13,7 +13,7 @@ export const CELL = { EMPTY: 0, WET: 1, SOLID: 2, FILLED: 3 };
 
 export const MODES = {
   party: {
-    target: 0.75,
+    target: 0.6,
     baseLives: 3, // + player count
     comboWindow: Math.round(1.5 * TICK_RATE),
   },
@@ -31,7 +31,7 @@ export const MODES = {
   // never stop — only the building is gated. Match ends at 75% total fill;
   // most territory wins.
   duel: {
-    target: 0.75,
+    target: 0.6,
     turnTicks: 30 * TICK_RATE,
     comboWindow: Math.round(1.5 * TICK_RATE),
   },

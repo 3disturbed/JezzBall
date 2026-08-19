@@ -83,7 +83,7 @@ around it, never on top of it.
   reached). A solo room is still a real room — the `/r/CODE` link keeps
   working, and a friend who opens it spectates, then converts the run to
   co-op at the next level.
-- Team clears a **level ladder**. Level N: `2 + N` atoms, target **75%**
+- Team clears a **level ladder**. Level N: `2 + N` atoms, target **60%**
   capture, par time for bonus.
 - **Shared team lives** (`3 + players`). A shattered wall costs 1 life. Zero
   lives = run over, show run summary + one-click restart.
@@ -138,7 +138,7 @@ around it, never on top of it.
   (announced "🪙 wins the toss!"); every rematch in the same room alternates
   the opener through the seat order. If the previous opener left the room,
   the coin is flipped again.
-- Match end: total fill reaches **75%**; most territory wins. Single board,
+- Match end: total fill reaches **60%**; most territory wins. Single board,
   no series; one-click rematch from the podium.
 - Disconnected players are skipped by the server until they rejoin (their
   seat's 60 s grace still applies to reclaiming it).

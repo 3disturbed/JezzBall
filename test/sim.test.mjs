@@ -129,6 +129,23 @@ test('no capture when atoms remain on both sides', () => {
   assert.ok(!events.some((e) => e.type === 'capture'), 'no region without atoms');
 });
 
+test('capture target is 60%: 60.4% wins, 56.2% does not', () => {
+  // x=20: captures cols 21..47 = 27*30 = 810 cells = 56.2% -> no victory.
+  const under = game();
+  parkAtoms(under, 2.5, 2.5);
+  tryBuild(under, 0, 20, 15, 'v');
+  const underEvents = runTicks(under, 4 * TICK_RATE);
+  assert.ok(underEvents.some((e) => e.type === 'capture'));
+  assert.ok(!underEvents.some((e) => e.type === 'end'), '56% must not clear the level');
+  assert.equal(under.over, false);
+  // x=18: captures cols 19..47 = 29*30 = 870 cells = 60.4% -> victory.
+  const over = game();
+  parkAtoms(over, 2.5, 2.5);
+  tryBuild(over, 0, 18, 15, 'v');
+  const overEvents = runTicks(over, 4 * TICK_RATE);
+  assert.ok(overEvents.some((e) => e.type === 'end' && e.result === 'victory'), '60.4% clears the level');
+});
+
 test('determinism: same seed + same script => same hash', () => {
   const run = () => {
     const state = game({ seed: 555, level: 4 });

@@ -1,5 +1,9 @@
 /* JezzBall — dark arcade look, one accent per player hue. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Author display rules (grid/flex on #countdown, .card, …) override the UA's
+   [hidden] {display:none}. Without this, hidden = true silently does nothing
+   — the stuck countdown "1" bug. Keep this above everything. */
+[hidden] { display: none !important; }
 :root {
   --bg: #0c1226;
   --bg2: #131c3d;
@@ -106,7 +110,7 @@ button.linkish { background: none; border: none; color: var(--dim); text-decorat
 }
 #fill-bar i { position: absolute; inset: 0; width: 0%; background: linear-gradient(90deg, #ffb03a, var(--accent)); transition: width .25s; }
 #fill-bar b { position: absolute; inset: 0; display: grid; place-items: center; font-size: .72rem; color: #fff; text-shadow: 0 1px 2px #000a; }
-#fill-bar::after { content: ""; position: absolute; left: 75%; top: 0; bottom: 0; width: 2px; background: #fff7; }
+#fill-bar::after { content: ""; position: absolute; left: 60%; top: 0; bottom: 0; width: 2px; background: #fff7; }
 .heart { color: var(--accent); }
 .heart.lost { opacity: .25; }
 #energy { width: 90px; height: .6rem; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; align-self: center; }

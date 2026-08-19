@@ -99,6 +99,9 @@ assert(window.document.querySelector('#screen-landing.active'), 'landing screen 
 assert(window.document.querySelector('#btn-solo'), 'solo button present');
 assert(window.document.querySelector('#solo-level'), 'solo level picker present');
 assert(window.document.querySelector('#btn-challenge'), 'challenge button present');
+// Guard: author display rules defeat the UA's [hidden] style without this.
+const css = readFileSync(path.join(ROOT, 'public', 'css', 'style.css'), 'utf8');
+assert(/\[hidden\]\s*\{\s*display:\s*none\s*!important/.test(css), '[hidden] override rule present in CSS');
 assert(window.document.querySelector('#emote-wheel:not([hidden])'), 'emote drawer is class-driven');
 
 // Create a room via the real button path.

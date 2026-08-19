@@ -5,7 +5,9 @@ import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export function resolve(specifier, context, next) {
+export function resolve(rawSpecifier, context, next) {
+  // The browser modules carry cache-busting queries; files on disk don't.
+  const specifier = rawSpecifier.startsWith('/') ? rawSpecifier.split('?')[0] : rawSpecifier;
   if (specifier === '/socket.io/socket.io.esm.min.js') {
     return { url: pathToFileURL(path.join(ROOT, 'test', 'smoke', 'socketio-stub.mjs')).href, shortCircuit: true };
   }

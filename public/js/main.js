@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js';
-import { Renderer } from '/js/render.js';
-import { attachInput } from '/js/input.js';
-import { sfx } from '/js/sfx.js';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=2';
+import { Renderer } from '/js/render.js?v=2';
+import { attachInput } from '/js/input.js?v=2';
+import { sfx } from '/js/sfx.js?v=2';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -298,6 +298,7 @@ function connect(after) {
 
   socket.on('end', (e) => {
     game.over = true;
+    stopCountdown();
     setTimeout(() => endScreen(e), 900);
     if (e.result === 'victory') sfx.victory();
     else if (e.result === 'defeat') sfx.defeat();
@@ -332,6 +333,7 @@ function saveIdentity() {
 function leaveToLanding(message) {
   game.code = null;
   game.solo = false;
+  stopCountdown();
   refreshSoloPicker();
   game.socket?.disconnect();
   game.socket = null;
@@ -374,29 +376,51 @@ function loadBoard(board) {
   }
 }
 
+// One interval, recomputed from the clock each tick, cleared everywhere a
+// round can stop — a thrown beep or a missed timeout can never strand a
+// digit on screen.
+let cdTimer = null;
+function stopCountdown() {
+  clearInterval(cdTimer);
+  cdTimer = null;
+  $('#countdown').hidden = true;
+}
+
+function runCountdown(startAt) {
+  stopCountdown();
+  const cd = $('#countdown');
+  cd.hidden = false;
+  let shown = null;
+  const tick = () => {
+    const left = Math.ceil((startAt - Date.now()) / 1000);
+    if (left <= 0) {
+      stopCountdown();
+      banner(game.mode === 'party' ? `LEVEL ${game.level}` : `ROUND ${game.roundNo}`);
+      try {
+        sfx.go();
+      } catch { /* audio may be locked pre-gesture */ }
+      return;
+    }
+    if (left !== shown) {
+      shown = left;
+      cd.textContent = left;
+      try {
+        sfx.beep();
+      } catch { /* audio may be locked pre-gesture */ }
+    }
+  };
+  tick();
+  cdTimer = setInterval(tick, 100);
+}
+
 function startRound(withCountdown, startAt) {
   game.over = false;
   show('game');
   renderer.reset();
   buildPowerSlots();
   updateHud();
-  if (withCountdown && startAt) {
-    const cd = $('#countdown');
-    cd.hidden = false;
-    const step = () => {
-      const left = Math.ceil((startAt - Date.now()) / 1000);
-      if (left <= 0) {
-        cd.hidden = true;
-        banner(game.mode === 'party' ? `LEVEL ${game.level}` : `ROUND ${game.roundNo}`);
-        sfx.go();
-        return;
-      }
-      cd.textContent = left;
-      sfx.beep();
-      setTimeout(step, Math.max(50, (startAt - Date.now()) % 1000 || 1000));
-    };
-    step();
-  }
+  if (withCountdown && startAt) runCountdown(startAt);
+  else stopCountdown();
 }
 
 // ---------- lobby UI ----------

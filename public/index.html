@@ -7,7 +7,10 @@
   <meta name="description" content="Multiplayer JezzBall. One link brings a friend into your room in seconds — no account, phone or desktop.">
   <meta name="theme-color" content="#131c3d">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
-  <link rel="stylesheet" href="/css/style.css">
+  <!-- Bump ?v= on every client deploy: index.html is no-cache, everything
+       else is cached 7 days, so these query strings are what roll players
+       onto fresh code. Keep in lockstep with the import tags inside js/. -->
+  <link rel="stylesheet" href="/css/style.css?v=2">
 </head>
 <body>
   <div id="app">
@@ -96,6 +99,6 @@
     </section>
 
   </div>
-  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/main.js?v=2"></script>
 </body>
 </html>

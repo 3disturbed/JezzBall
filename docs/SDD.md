@@ -142,14 +142,15 @@ risk is legible *before* the click (pillar 2).
   avatar does a wince emote automatically.
 - Announcer (text banners + SFX, no voice in v1): combo tiers, steals,
   "80%!", last-10-seconds countdown.
-- All effects respect `prefers-reduced-motion`; SFX mutable; music separate
-  volume.
+- All effects respect `prefers-reduced-motion`; SFX mutable. (Music and a
+  lobby QR code moved to the post-launch backlog — v1 ships procedural SFX
+  and copy-link only.)
 
 ### 2.6 Social & session flow
 
 ```
 Landing page ──"Play"──▶ creates room ──▶ Lobby (code ABC123, link copied
-     │                                     button, QR, mode picker, color/name)
+     │                                     button, mode picker, color/name)
      └─"Join a game"─▶ code entry          │  players ready-up
                                            ▼
 https://jezzball.darksgames.app/r/ABC123 ──▶ same lobby, seat claimed

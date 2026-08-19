@@ -298,6 +298,17 @@ test('duel: match ends at 75% fill with turf scores', () => {
   assert.equal(runTicks(state, 40).length, 0);
 });
 
+test('duel: firstSeat picks the opener, invalid falls back', () => {
+  const s1 = createGame({ mode: 'duel', seed: 1, seats: [{ seat: 0 }, { seat: 1 }], firstSeat: 1 });
+  assert.equal(s1.turn.seat, 1);
+  // Opener still rotates from wherever it started.
+  parkAtoms(s1, 2.5, 2.5);
+  runTicks(s1, 30 * TICK_RATE + 2);
+  assert.equal(s1.turn.seat, 0);
+  const s2 = createGame({ mode: 'duel', seed: 1, seats: [{ seat: 0 }, { seat: 1 }], firstSeat: 7 });
+  assert.equal(s2.turn.seat, 0);
+});
+
 test('duel: passTurn skips the current holder', async () => {
   const { passTurn } = await import('../shared/sim.js');
   const state = createGame({ mode: 'duel', seed: 9, seats: [{ seat: 0 }, { seat: 1 }, { seat: 2 }] });

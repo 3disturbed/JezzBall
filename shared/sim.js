@@ -76,7 +76,7 @@ export function partyAtomTypes(level, count, rng) {
   return types;
 }
 
-export function createGame({ mode, seed, seats, level = 1 }) {
+export function createGame({ mode, seed, seats, level = 1, firstSeat }) {
   const rng = makeRng(seed);
   const state = {
     mode,
@@ -125,7 +125,8 @@ export function createGame({ mode, seed, seats, level = 1 }) {
       state.timer = MODES.turf.roundTicks;
     } else {
       state.turnOrder = seats.map((s) => s.seat).sort((a, b) => a - b);
-      state.turn = { seat: state.turnOrder[0], ticksLeft: MODES.duel.turnTicks, wallId: null };
+      const opener = state.turnOrder.includes(firstSeat) ? firstSeat : state.turnOrder[0];
+      state.turn = { seat: opener, ticksLeft: MODES.duel.turnTicks, wallId: null };
     }
   }
 

@@ -49,6 +49,7 @@ export class Room {
     this.sim = null;
     this.roundWins = new Map(); // turf: seat -> rounds won
     this.roundNo = 1;
+    this.duelStarter = null; // last opener; null = coin flip next duel
     this.timer = null;
     this.loop = null;
     this.emptySince = Date.now();
@@ -275,12 +276,29 @@ export class Room {
       .filter((p) => p.connected && p.seat !== -1)
       .map((p) => ({ seat: p.seat }));
     const seed = crypto.randomInt(2 ** 31);
-    this.sim = createGame({ mode: this.mode, seed, seats, level: this.level });
+    // Duel opener: coin flip the first game, then alternate ("flip flop") on
+    // every rematch. A starter who left the room forces a fresh flip.
+    let firstTurn = null;
+    if (this.mode === 'duel' && seats.length) {
+      const seatIds = seats.map((s) => s.seat).sort((a, b) => a - b);
+      let coinFlip = false;
+      let starter;
+      if (this.duelStarter === null || !seatIds.includes(this.duelStarter)) {
+        starter = seatIds[crypto.randomInt(seatIds.length)];
+        coinFlip = true;
+      } else {
+        starter = seatIds[(seatIds.indexOf(this.duelStarter) + 1) % seatIds.length];
+      }
+      this.duelStarter = starter;
+      firstTurn = { seat: starter, coinFlip };
+    }
+    this.sim = createGame({ mode: this.mode, seed, seats, level: this.level, firstSeat: firstTurn?.seat });
     this.io.to(this.code).emit('start', {
       startAt,
       level: this.level,
       mode: this.mode,
       roundNo: this.roundNo,
+      firstTurn,
       board: serializeBoard(this.sim),
       players: this.lobbyPlayers(),
     });

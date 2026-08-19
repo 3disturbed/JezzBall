@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=6';
-import { Renderer } from '/js/render.js?v=6';
-import { attachInput } from '/js/input.js?v=6';
-import { sfx } from '/js/sfx.js?v=6';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=7';
+import { Renderer } from '/js/render.js?v=7';
+import { attachInput } from '/js/input.js?v=7';
+import { sfx } from '/js/sfx.js?v=7';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -42,6 +42,7 @@ export const game = {
   energy: {},
   timer: 0,
   turn: null, // duel: {seat, left}
+  firstTurn: null, // duel: {seat, coinFlip}
   latestTick: 0,
   tickOffsetMs: null, // EMA of (recvAt - t*tickMs)
   seq: 1,
@@ -164,6 +165,7 @@ function connect(after) {
     game.mode = s.mode;
     game.level = s.level;
     game.roundNo = s.roundNo;
+    game.firstTurn = s.firstTurn ?? null;
     game.players = s.players;
     loadBoard(s.board);
     startRound(true, s.startAt);
@@ -435,9 +437,15 @@ function runCountdown(startAt) {
     const left = Math.ceil((startAt - Date.now()) / 1000);
     if (left <= 0) {
       stopCountdown();
-      banner(game.mode === 'party' ? `LEVEL ${game.level}` : `ROUND ${game.roundNo}`);
+      if (game.mode === 'duel' && game.firstTurn) {
+        const who = game.firstTurn.seat === game.seat ? 'You' : seatName(game.firstTurn.seat);
+        banner(game.firstTurn.coinFlip ? `🪙 ${who} win${who === 'You' ? '' : 's'} the toss!` : `${who} open${who === 'You' ? '' : 's'} this game`);
+      } else {
+        banner(game.mode === 'party' ? `LEVEL ${game.level}` : `ROUND ${game.roundNo}`);
+      }
       try {
-        sfx.go();
+        if (game.mode === 'duel' && game.firstTurn?.coinFlip) sfx.coin();
+        else sfx.go();
       } catch { /* audio may be locked pre-gesture */ }
       return;
     }

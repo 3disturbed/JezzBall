@@ -134,6 +134,10 @@ around it, never on top of it.
   (with any capture credited to you) or shattered (your turn was the price).
   Running the clock out passes the turn with nothing built.
 - No energy, no lives — one wall per turn is the whole economy.
+- **Opener fairness**: the first game's opener is a server-side coin flip
+  (announced "🪙 wins the toss!"); every rematch in the same room alternates
+  the opener through the seat order. If the previous opener left the room,
+  the coin is flipped again.
 - Match end: total fill reaches **75%**; most territory wins. Single board,
   no series; one-click rematch from the podium.
 - Disconnected players are skipped by the server until they rejoin (their

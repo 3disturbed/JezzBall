@@ -98,6 +98,8 @@ assert(window.document.querySelector('#arena'), 'canvas mounts');
 assert(window.document.querySelector('#screen-landing.active'), 'landing screen shows');
 assert(window.document.querySelector('#btn-solo'), 'solo button present');
 assert(window.document.querySelector('#solo-level'), 'solo level picker present');
+assert(window.document.querySelector('#btn-challenge'), 'challenge button present');
+assert(window.document.querySelector('#emote-wheel:not([hidden])'), 'emote drawer is class-driven');
 
 // Create a room via the real button path.
 window.document.querySelector('#btn-create').click();

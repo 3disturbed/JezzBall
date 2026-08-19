@@ -77,6 +77,10 @@ button.linkish { background: none; border: none; color: var(--dim); text-decorat
 .seg-btn.active small { color: #5c1a1a; }
 
 .code { font-family: ui-monospace, monospace; letter-spacing: .25em; color: var(--accent); }
+.share-btn { margin-top: .3rem; font-weight: 700; }
+.share-btn.pulse { animation: sharePulse 1.1s infinite alternate; border-color: var(--accent); }
+@keyframes sharePulse { to { box-shadow: 0 0 18px #ff6b6b88; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .share-btn.pulse { animation: none; box-shadow: 0 0 12px #ff6b6b66; } }
 .players { list-style: none; margin: 1rem 0; display: grid; gap: .4rem; }
 .players li {
   display: flex; align-items: center; gap: .6rem;
@@ -137,13 +141,19 @@ button.linkish { background: none; border: none; color: var(--dim); text-decorat
 #power-slots button { min-width: 2.9rem; height: 2.9rem; border-radius: 12px; font-size: 1.15rem; }
 #power-slots button:disabled { opacity: .3; }
 
+/* Bottom drawer: slides up over the control bar, never over the arena. */
 #emote-wheel {
-  position: fixed; display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem;
-  left: 50%; bottom: 5.4rem; transform: translateX(-50%);
-  background: rgba(10,14,32,.92); border: 1px solid rgba(255,255,255,.15);
-  border-radius: 16px; padding: .7rem; z-index: 30;
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; gap: .5rem; justify-content: center; align-items: center;
+  padding: .55rem .8rem calc(.55rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(10,14,32,.94);
+  border-top: 1px solid rgba(255,255,255,.15);
+  transform: translateY(105%); transition: transform .22s ease;
+  overflow-x: auto; z-index: 30;
 }
-#emote-wheel button { font-size: 1.6rem; width: 3.2rem; height: 3.2rem; }
+#emote-wheel.open { transform: translateY(0); }
+#emote-wheel button { font-size: 1.5rem; min-width: 2.9rem; height: 2.9rem; flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) { #emote-wheel { transition: none; } }
 
 .float-emote {
   position: absolute; font-size: 2rem; pointer-events: none;

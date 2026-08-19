@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=4';
-import { Renderer } from '/js/render.js?v=4';
-import { attachInput } from '/js/input.js?v=4';
-import { sfx } from '/js/sfx.js?v=4';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=5';
+import { Renderer } from '/js/render.js?v=5';
+import { attachInput } from '/js/input.js?v=5';
+import { sfx } from '/js/sfx.js?v=5';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -49,6 +49,7 @@ export const game = {
   aim: null, // {cx, cy} hover cell
   over: false,
   solo: false,
+  challenge: false,
 };
 
 // Solo progression: furthest level reached, remembered on-device.
@@ -135,6 +136,11 @@ function connect(after) {
     } else {
       renderLobby();
       show('lobby');
+      if (game.challenge) {
+        // Challenge flow: the next tap should be "send the link".
+        game.challenge = false;
+        $('#btn-copy').classList.add('pulse');
+      }
     }
   });
 
@@ -663,7 +669,7 @@ export function toggleAxis() {
 
 export function sendEmote(id) {
   game.socket?.emit('emote', { id });
-  $('#emote-wheel').hidden = true;
+  $('#emote-wheel').classList.remove('open');
 }
 
 // ---------- buttons ----------
@@ -683,14 +689,32 @@ $('#btn-join').onclick = () => {
   if (code.length !== 6) return;
   connect(() => game.socket.emit('hello', { roomCode: code, name: nameInput.value, hue: +hueInput.value }));
 };
-$('#btn-copy').onclick = async () => {
+async function shareInvite() {
+  const url = `${location.origin}/r/${game.code}`;
+  $('#btn-copy').classList.remove('pulse');
+  if (navigator.share) {
+    // Native share sheet on phones — straight into Messages/WhatsApp/etc.
+    try {
+      await navigator.share({ title: 'JezzBall', text: '⚔️ I challenge you to JezzBall! Join my room:', url });
+      return;
+    } catch {
+      return; // user closed the sheet — nothing to clean up
+    }
+  }
   try {
-    await navigator.clipboard.writeText(`${location.origin}/r/${game.code}`);
+    await navigator.clipboard.writeText(url);
     $('#copy-done').hidden = false;
     setTimeout(() => ($('#copy-done').hidden = true), 1500);
   } catch {
-    prompt('Copy this link:', `${location.origin}/r/${game.code}`);
+    prompt('Copy this link:', url);
   }
+}
+$('#btn-copy').onclick = shareInvite;
+$('#btn-challenge').onclick = () => {
+  saveIdentity();
+  game.solo = false;
+  game.challenge = true;
+  connect(() => game.socket.emit('create', { mode: 'duel', name: nameInput.value || 'Player', hue: +hueInput.value }));
 };
 $('#btn-ready').onclick = () => {
   const me = game.players.find((p) => p.seat === game.seat);
@@ -727,7 +751,9 @@ for (const b of document.querySelectorAll('#mode-seg .seg-btn')) {
     b.onclick = () => sendEmote(i);
     wheel.append(b);
   });
-  $('#btn-emote').onclick = () => (wheel.hidden = !wheel.hidden);
+  $('#btn-emote').onclick = () => wheel.classList.toggle('open');
+  // Tapping the arena closes the drawer.
+  $('#arena').addEventListener('pointerdown', () => wheel.classList.remove('open'));
 }
 
 // ---------- boot ----------
@@ -760,9 +786,9 @@ document.addEventListener('keydown', (e) => {
       toggleAxis();
     }
     if (e.key >= '1' && e.key <= '3') game.socket?.emit('power', { slot: +e.key - 1 });
-    if (e.key === 'e' || e.key === 'E') $('#emote-wheel').hidden = false;
+    if (e.key === 'e' || e.key === 'E') $('#emote-wheel').classList.add('open');
   }
 });
 document.addEventListener('keyup', (e) => {
-  if (e.key === 'e' || e.key === 'E') setTimeout(() => ($('#emote-wheel').hidden = true), 900);
+  if (e.key === 'e' || e.key === 'E') setTimeout(() => $('#emote-wheel').classList.remove('open'), 900);
 });

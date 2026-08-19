@@ -172,6 +172,12 @@ risk is legible *before* the click (pillar 2).
 
 ### 2.6 Social & session flow
 
+Landing shortcuts: *Play solo* (auto-start, §2.2) and *⚔️ Challenge a
+friend* — creates a Duel room and lands in the lobby with the share button
+pulsing; sharing uses the native share sheet (Web Share API) on phones and
+copy-to-clipboard elsewhere. The emote picker is a bottom slide-out drawer
+so it never covers the arena.
+
 ```
 Landing page ──"Play"──▶ creates room ──▶ Lobby (code ABC123, link copied
      │                                     button, mode picker, color/name)

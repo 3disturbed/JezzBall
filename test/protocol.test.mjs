@@ -151,6 +151,42 @@ test('host migration on hard leave', async () => {
   b.disconnect();
 });
 
+test('duel: opener is coin-flipped, then alternates on rematch', async () => {
+  const a = client();
+  a.emit('create', { mode: 'duel', name: 'FlipA' });
+  const wa = await once(a, 'welcome');
+  const b = client();
+  b.emit('hello', { roomCode: wa.code, name: 'FlipB' });
+  await once(b, 'welcome');
+
+  const start1P = once(a, 'start');
+  a.emit('ready', { ready: true });
+  b.emit('ready', { ready: true });
+  const s1 = await start1P;
+  assert.equal(s1.firstTurn.coinFlip, true, 'first game is a coin flip');
+  const first = s1.firstTurn.seat;
+  assert.ok(first === 0 || first === 1);
+  assert.equal(s1.board.turn.seat, first, 'sim opener matches the flip');
+
+  // Force the match over server-side, then rematch.
+  const room = rooms.get(wa.code);
+  const endP = once(a, 'end');
+  room.onRoundEnd({ result: 'filled' });
+  await endP;
+  const lobbyP = once(b, 'lobby');
+  a.emit('host', { action: 'rematch' });
+  await lobbyP;
+
+  const start2P = once(a, 'start');
+  a.emit('ready', { ready: true });
+  b.emit('ready', { ready: true });
+  const s2 = await start2P;
+  assert.equal(s2.firstTurn.coinFlip, false, 'rematch is not a flip');
+  assert.equal(s2.firstTurn.seat, first === 0 ? 1 : 0, 'opener alternates');
+  a.disconnect();
+  b.disconnect();
+});
+
 test('healthz reports rooms', async () => {
   const res = await fetch(`${base}/healthz`);
   const body = await res.json();

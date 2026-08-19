@@ -8,7 +8,7 @@
   --accent: #ff6b6b;
   --ok: #59d98c;
 }
-html, body { height: 100%; }
+html, body { height: 100%; overscroll-behavior: none; }
 body {
   background: radial-gradient(120% 120% at 50% 0%, var(--bg2), var(--bg));
   color: var(--ink);

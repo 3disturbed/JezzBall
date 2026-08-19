@@ -154,6 +154,12 @@ The ghost preview always shows exactly which cells both heads will claim and
 tints red any atom currently on a collision course with the wet phase — the
 risk is legible *before* the click (pillar 2).
 
+Browser navigation gestures are captured and canceled: `overscroll-behavior:
+none` plus non-passive `preventDefault` on arena touches suppress
+back/forward swipes and pull-to-refresh, and a history-trap `popstate`
+handler catches anything the browser refuses to cancel (iOS Safari edge
+swipes) by immediately restoring the room entry.
+
 ### 2.5 Juice specification (scheduled work, not polish)
 
 - Atoms: squash-and-stretch on every bounce, 8-frame motion trail.

@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=5';
-import { Renderer } from '/js/render.js?v=5';
-import { attachInput } from '/js/input.js?v=5';
-import { sfx } from '/js/sfx.js?v=5';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=6';
+import { Renderer } from '/js/render.js?v=6';
+import { attachInput } from '/js/input.js?v=6';
+import { sfx } from '/js/sfx.js?v=6';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -123,6 +123,7 @@ function connect(after) {
     game.roundWins = w.roundWins || {};
     game.players = w.players;
     history.replaceState(null, '', `/r/${w.code}`);
+    armBackTrap();
     if (w.board) {
       // Rejoin mid-run; a one-seat room keeps solo ergonomics.
       game.solo = w.players.length === 1;
@@ -348,8 +349,28 @@ function saveIdentity() {
   localStorage.setItem('jb-hue', hueInput.value);
 }
 
+// Browser-nav capture: edge swipes that escape preventDefault (iOS Safari's
+// back gesture can't be blocked in-page) land on a buffer history entry and
+// popstate puts the player straight back in the room. Leaving the room
+// disarms it (game.code null), so back works normally from the landing page.
+let backTrapArmed = false;
+function armBackTrap() {
+  if (backTrapArmed) return;
+  backTrapArmed = true;
+  history.pushState({ jb: 'room' }, '', location.pathname);
+}
+window.addEventListener('popstate', () => {
+  if (game.code) {
+    history.pushState({ jb: 'room' }, '', `/r/${game.code}`);
+    banner('Swipe captured — still in the game!');
+  } else {
+    backTrapArmed = false;
+  }
+});
+
 function leaveToLanding(message) {
   game.code = null;
+  backTrapArmed = false;
   game.solo = false;
   stopCountdown();
   refreshSoloPicker();

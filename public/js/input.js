@@ -5,7 +5,7 @@
 // the cell where the finger went down, and the swipe direction picks the
 // axis (horizontal swipe -> horizontal wall). The ⇕ button and two-finger
 // tap still toggle the axis for the preview.
-import { W, H } from '/shared/sim.js?v=5';
+import { W, H } from '/shared/sim.js?v=6';
 
 const SWIPE_PX = 22; // finger travel that turns a tap into a launch
 
@@ -40,8 +40,10 @@ export function attachInput(canvas, game, { requestBuild, toggleAxis, setAxis })
   // ----- touch: tap to aim, swipe to launch -----
   let touch = null; // {id, x0, y0, cell, launched}
   canvas.addEventListener('touchstart', (e) => {
+    // Non-passive + preventDefault: a launch swipe must never double as a
+    // browser back/forward gesture or pull-to-refresh.
+    e.preventDefault();
     if (e.touches.length === 2) {
-      e.preventDefault();
       touch = null; // second finger cancels a pending launch
       toggleAxis();
       return;
@@ -49,7 +51,7 @@ export function attachInput(canvas, game, { requestBuild, toggleAxis, setAxis })
     const t = e.changedTouches[0];
     touch = { id: t.identifier, x0: t.clientX, y0: t.clientY, cell: cellFromPoint(t.clientX, t.clientY) };
     game.aim = touch.cell; // preview appears immediately, anchored here
-  }, { passive: true });
+  }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
     if (!touch) return;

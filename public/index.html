@@ -10,7 +10,7 @@
   <!-- Bump ?v= on every client deploy: index.html is no-cache, everything
        else is cached 7 days, so these query strings are what roll players
        onto fresh code. Keep in lockstep with the import tags inside js/. -->
-  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="stylesheet" href="/css/style.css?v=10">
 </head>
 <body>
   <div id="app">
@@ -43,7 +43,7 @@
         </div>
       </div>
       <p id="landing-error" class="error" hidden></p>
-      <p class="hint">Made for sharing — create a room and send the link. No accounts, ever.</p>
+      <p class="hint">Made for sharing — create a room and send the link. No account needed; sign in to see friends.</p>
     </section>
 
     <!-- Lobby -->
@@ -101,6 +101,8 @@
     </section>
 
   </div>
-  <script type="module" src="/js/main.js?v=9"></script>
+  <script src="https://darksgames.app/sdk/dg-account.v1.js" crossorigin="anonymous" defer></script>
+  <script src="https://darksgames.app/sdk/dg-overlay.v1.js" crossorigin="anonymous" defer></script>
+  <script type="module" src="/js/main.js?v=10"></script>
 </body>
 </html>

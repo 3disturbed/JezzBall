@@ -45,6 +45,8 @@ export default [
         AudioContext: 'readonly',
         matchMedia: 'readonly',
         devicePixelRatio: 'readonly',
+        DGAccount: 'readonly', // Darks Games SDKs, classic scripts in index.html
+        DGOverlay: 'readonly',
       },
     },
   },

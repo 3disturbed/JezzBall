@@ -1,10 +1,10 @@
 // JezzBall client — net, screens, HUD. Rendering lives in render.js,
 // input in input.js, sound in sfx.js.
 import { io } from '/socket.io/socket.io.esm.min.js';
-import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=9';
-import { Renderer } from '/js/render.js?v=9';
-import { attachInput } from '/js/input.js?v=9';
-import { sfx } from '/js/sfx.js?v=9';
+import { W, H, TOTAL, CELL, TICK_RATE } from '/shared/sim.js?v=10';
+import { Renderer } from '/js/render.js?v=10';
+import { attachInput } from '/js/input.js?v=10';
+import { sfx } from '/js/sfx.js?v=10';
 
 const $ = (sel) => document.querySelector(sel);
 const screens = {
@@ -125,6 +125,11 @@ function connect(after) {
     game.players = w.players;
     history.replaceState(null, '', `/r/${w.code}`);
     armBackTrap();
+    if (partyRoomPending && window.DGOverlay) {
+      // Party Launch host: hand the freshly created room to the party.
+      partyRoomPending = false;
+      DGOverlay.party.setRoom({ joinCode: w.code }).catch((e) => console.warn('[social] setRoom', e));
+    }
     if (w.board) {
       // Rejoin mid-run; a one-seat room keeps solo ergonomics.
       game.solo = w.players.length === 1;
@@ -144,6 +149,7 @@ function connect(after) {
         $('#btn-copy').classList.add('pulse');
       }
     }
+    publishPresence();
   });
 
   socket.on('lobby', (l) => {
@@ -158,6 +164,7 @@ function connect(after) {
     if (game.solo && l.players.filter((p) => p.connected).length > 1) game.solo = false;
     if (!game.solo && l.phase === 'lobby' && !screens.lobby.classList.contains('active')) show('lobby');
     renderLobby();
+    publishPresence();
   });
 
   socket.on('start', (s) => {
@@ -169,6 +176,7 @@ function connect(after) {
     game.players = s.players;
     loadBoard(s.board);
     startRound(true, s.startAt);
+    publishPresence();
   });
 
   socket.on('snap', (s) => {
@@ -325,6 +333,7 @@ function connect(after) {
     if (e.result === 'victory') sfx.victory();
     else if (e.result === 'defeat') sfx.defeat();
     else sfx.roundEnd();
+    publishPresence();
   });
 
   socket.on('kicked', () => {
@@ -375,6 +384,7 @@ function leaveToLanding(message) {
   game.code = null;
   backTrapArmed = false;
   game.solo = false;
+  partyRoomPending = false;
   stopCountdown();
   refreshSoloPicker();
   game.socket?.disconnect();
@@ -386,6 +396,7 @@ function leaveToLanding(message) {
     err.textContent = message;
     err.hidden = false;
   }
+  publishPresence();
 }
 
 // ---------- board / round ----------
@@ -801,6 +812,84 @@ refreshSoloPicker();
 const renderer = new Renderer($('#arena'), game);
 attachInput($('#arena'), game, { requestBuild, toggleAxis, setAxis });
 renderer.start();
+
+// ---------- Darks Games social ----------
+// The overlay SDK (loaded before this module, see index.html) gives friends
+// a Join button for our room, lets invites/party rooms join in place, and
+// shows what we're up to. Everything here is a no-op when the SDK is absent.
+let partyRoomPending = false; // Party Launch host: setRoom on the next welcome
+
+function publishPresence() {
+  if (!window.DGOverlay) return;
+  if (!game.code) {
+    DGOverlay.presence.set({ state: 'menu', detail: '', join: null });
+    return;
+  }
+  const connected = game.players.filter((p) => p.connected).length;
+  const max = game.mode === 'party' ? 4 : 8; // MAX_PARTY_PLAYERS / MAX_PLAYERS (server/room.js)
+  const label = { party: 'Party Op', turf: 'Turf War', duel: 'Duel' }[game.mode] ?? game.mode;
+  DGOverlay.presence.set({
+    state: game.phase === 'lobby' ? 'lobby' : game.phase === 'end' ? 'podium' : `level ${game.level}`,
+    detail: `${label}${game.solo ? ' · solo' : ''}${game.phase !== 'lobby' ? ` · level ${game.level}` : ''}`,
+    join: { joinCode: game.code, joinable: connected < max, players: connected, max },
+  });
+}
+
+// Friend's Join / accepted invite / party room → join in place. The server
+// refuses `hello` once a socket sits in a room, so leave (disconnect) first
+// and open a fresh socket. Return false and the overlay navigates instead.
+function socialJoin(j) {
+  const code = (j.joinCode || (new URL(j.joinUrl, location.origin).pathname.match(/^\/r\/([A-Za-z0-9]{6})$/) || [])[1] || '').toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) return false;
+  if (game.code === code) return true;
+  if (game.socket) leaveToLanding();
+  saveIdentity();
+  game.solo = false;
+  connect(() =>
+    game.socket.emit('hello', {
+      roomCode: code,
+      playerToken: localStorage.getItem('jb-room') === code ? game.token : undefined,
+      name: nameInput.value || 'Player',
+      hue: +hueInput.value,
+    })
+  );
+  return true;
+}
+
+// Party Launch: the host creates the room, members get it via socialJoin.
+// Party Op seats 4 (MAX_PARTY_PLAYERS), so bigger parties land in Turf War;
+// Duel is 2 seats and never picked here.
+function onPartyArrived({ isHost, room, party }) {
+  if (!isHost || room) return;
+  if (game.code) {
+    DGOverlay.party.setRoom({ joinCode: game.code }).catch((e) => console.warn('[social] setRoom', e));
+    return;
+  }
+  if (game.socket) leaveToLanding();
+  saveIdentity();
+  game.solo = false;
+  const mode = (party?.members?.length ?? 0) > 4 ? 'turf' : 'party';
+  partyRoomPending = true; // before connect(): after() runs synchronously on an existing socket
+  connect(() => game.socket.emit('create', { mode, name: nameInput.value || 'Player', hue: +hueInput.value }));
+}
+
+async function initSocial() {
+  if (!window.DGAccount || !window.DGOverlay) return;
+  const user = await DGAccount.init({ game: 'jezzball' });
+  if (user?.name && !nameInput.value) {
+    nameInput.value = user.name.slice(0, 16);
+    saveIdentity();
+  }
+  await DGOverlay.init({
+    game: 'jezzball',
+    accent: '#ffb347',
+    joinHandler: socialJoin,
+    onOpen: () => $('#emote-wheel').classList.remove('open'),
+  });
+  DGOverlay.on('party.arrived', onPartyArrived);
+  publishPresence();
+}
+window.addEventListener('load', () => initSocial().catch((e) => console.warn('[social]', e)), { once: true });
 
 const deepLink = location.pathname.match(/^\/r\/([A-Za-z0-9]{6})$/);
 if (deepLink) {

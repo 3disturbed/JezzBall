@@ -20,6 +20,16 @@ app.get('/healthz', (_req, res) => {
   res.json({ ok: true, uptime: Math.round((Date.now() - started) / 1000), ...rooms.stats() });
 });
 
+// Room info for the Darks Games social layer (catalog roomInfoUrl) and deep
+// links: unauthenticated, no player names. Registered before the static
+// middleware so it can never be shadowed by a file.
+app.get('/api/rooms/:code', (req, res) => {
+  const room = rooms.get(req.params.code);
+  if (!room) return res.status(404).json({ error: 'not_found' });
+  const players = [...room.players.values()].filter((p) => p.connected).length;
+  res.json({ code: room.code, players, max: room.maxSeats(), phase: room.phase, mode: room.mode, joinable: players < room.maxSeats() });
+});
+
 // The client imports the sim for wall prediction.
 app.use('/shared', express.static(path.join(ROOT, 'shared'), { maxAge: '1h' }));
 app.use(express.static(path.join(ROOT, 'public'), { maxAge: '1h', index: 'index.html' }));

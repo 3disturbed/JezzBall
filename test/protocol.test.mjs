@@ -199,3 +199,19 @@ test('healthz reports rooms', async () => {
   assert.equal(body.ok, true);
   assert.ok(body.rooms >= 0);
 });
+
+test('GET /api/rooms/:code reports room info, 404 for unknown', async () => {
+  const miss = await fetch(`${base}/api/rooms/ZZZZZZ`);
+  assert.equal(miss.status, 404);
+  assert.deepEqual(await miss.json(), { error: 'not_found' });
+
+  const a = client();
+  a.emit('create', { mode: 'party', name: 'Host' });
+  const wa = await once(a, 'welcome');
+  const res = await fetch(`${base}/api/rooms/${wa.code.toLowerCase()}`);
+  assert.equal(res.status, 200);
+  const info = await res.json();
+  assert.deepEqual(info, { code: wa.code, players: 1, max: 4, phase: 'lobby', mode: 'party', joinable: true });
+  assert.ok(!JSON.stringify(info).includes('Host'), 'no player names leak');
+  a.disconnect();
+});

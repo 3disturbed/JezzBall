@@ -5,7 +5,7 @@
 // the cell where the finger went down, and the swipe direction picks the
 // axis (horizontal swipe -> horizontal wall). The ⇕ button and two-finger
 // tap still toggle the axis for the preview.
-import { W, H } from '/shared/sim.js?v=9';
+import { W, H } from '/shared/sim.js?v=10';
 
 const SWIPE_PX = 22; // finger travel that turns a tap into a launch
 
